@@ -1,0 +1,40 @@
+{
+  "private": true,
+  "author": "gengsheng.wp <gengsheng.wp@antgroup.com>",
+  "scripts": {
+    "dev": "max dev",
+    "build": "max build",
+    "format": "prettier --cache --write .",
+    "prepare": "husky",
+    "postinstall": "max setup",
+    "setup": "max setup",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.0.1",
+    "@ant-design/pro-components": "^2.4.4",
+    "@ant-design/x": "^1.1.0",
+    "@antv/g6": "^5.0.45",
+    "@umijs/max": "^4.4.5",
+    "antd": "^5.4.0",
+    "dayjs": "^1.11.13",
+    "lodash": "^4.17.21",
+    "markdown-navbar": "^1.4.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "use-immer": "^0.11.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.16",
+    "@types/react": "^18.0.33",
+    "@types/react-dom": "^18.0.11",
+    "husky": "^9",
+    "lint-staged": "^13.2.0",
+    "prettier": "^2.8.7",
+    "prettier-plugin-organize-imports": "^3.2.2",
+    "prettier-plugin-packagejson": "^2.4.3",
+    "typescript": "^5.0.3"
+  },
+  "repository": "https://github.com/TuGraph-family/chat2graph.git",
+  "__npminstall_done": false
+}

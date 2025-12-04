@@ -1,0 +1,277 @@
+Chat2Graph System
+│
+├── 🤖 Design Expert  （图谱建模专家）
+│   └── Workflow
+│       ├── analysis_operator 分析操作员   内容理解操作 -> 深度理解操作
+│       │   ├── Action: content_understanding 内容理解操作
+│       │   │   └── Tool: DocumentReader
+│       │   └── Action: deep_recognition 深度理解操作
+│       │       └── Tool: —
+│       │
+│       └── concept_modeling_operator 概念建模操作员       实体类型定义 -> 关系类型定义 -> Cypher schema结构设计和导入
+│           ├── Action: entity_type_definition 实体类型定义
+│           ├── Action: relation_type_definition 关系类型定义
+│           ├── Action: schema_design_and_import  Cypher schema结构设计和导入
+│           │   ├── Tool: SchemaGetter
+│           │   ├── Tool: VertexLabelAdder
+│           │   └── Tool: EdgeLabelAdder
+│           └── Action: graph_validation  图的正确性分析
+│               └── Tool: GraphReachabilityGetter
+│
+├── 🧩 Extraction Expert  （数据抽取与导入专家）
+│   └── Workflow
+│       └── data_importation_operator 数据导入操作员   理解操作 -> 数据状态查询 -> 内容理解操作(2次出现) -> 三元组生成 -> 输出结果操作
+│           ├── Action: schema_understanding schema 理解操作
+│           │   └── Tool: SchemaGetter
+│           ├── Action: data_status_check  数据状态查询
+│           │   └── Tool: DataStatusCheck
+│           ├── Action: content_understanding_2 内容理解操作 2
+│           │   └── Tool: DocumentReader
+│           ├── Action: triplet_data_generation 三元组生成
+│           │   └── Tool: DataImport
+│           └── Action: output_result 输出结果操作
+│
+├── 🔍 Query Expert  （图数据库查询专家）
+│   └── Workflow
+│       └── query_design_operator 查询语句设计操作员     节点类型和状态确认 ->  逻辑补全 / 自我推理 -> 查询执行操作
+│           ├── Action: vertex_type_and_condition_validation 节点类型和状态确认
+│           │   └── Tool: SchemaGetter
+│           ├── Action: supplement  逻辑补全 / 自我推理
+│           └── Action: query_execution 查询执行操作
+│               ├── Tool: SchemaGetter
+│               └── Tool: CypherExecutor
+│
+├── 📈 Analysis Expert  （图算法分析专家）
+│   └── Workflow
+│       └── algorithms_execute_operator 算法执行操作员 文本理解操作(3次出现) -> 算法意图识别 -> 算法执行操作
+│           ├── Action: content_understanding_3 文本理解操作
+│           ├── Action: algorithms_intention_identification 算法意图识别
+│           │   └── Tool: AlgorithmsGetter
+│           └── Action: algorithms_execution 算法执行操作
+│               ├── Tool: PageRankExecutor
+│               ├── Tool: BetweennessCentralityExecutor
+│               ├── Tool: LouvainExecutor
+│               ├── Tool: LabelPropagationExecutor
+│               ├── Tool: ShortestPathExecutor
+│               ├── Tool: NodeSimilarityExecutor
+│               ├── Tool: CommonNeighborsExecutor
+│               ├── Tool: KMeansExecutor
+│               ├── Tool: SchemaGetter
+│               └── Tool: CypherExecutor
+│
+├── 📚 Q&A Expert  （问答与检索专家）
+│   └── Workflow
+│       ├── retrieval_operator 检索专家 知识库检索操作 -> 网络搜索
+│       │   ├── Action: knowledge_base_retrieving 知识库检索操作
+│       │   │   └── Tool: KnowledgeBaseRetriever
+│       │   └── Action: web_research 网络搜索
+│       │       └── Tool: BrowserUsing
+│       │
+│       └── summary_operator 总结操作员
+│           └── Action: reference_listing 参考列举
+│               └── Tool: FileTool
+│
+└── 🧠 Leader  （领导智能体）
+    └── Actions
+        ├── query_system_status 查看系统状态
+        │   ├── Tool: SystemStatusChecker
+        │   └── Tool: DocumentReader
+        └── job_decomposition 分割任务操作
+
+
+【Graph Modeling / 基础读写类】
+
+    DocumentReader
+
+        功能定位：读取原始文档内容，供内容理解、概念抽取与后续建模或抽取使用。
+        输入/输出：输入为文档定位信息（路径、ID、片段范围）；输出为原文文本或结构化片段。
+        何时使用：当需要“理解材料本身在说什么”时（建模前做领域梳理、实体概念识别）。
+        常见陷阱：只读了局部导致上下文缺失；混合多来源文档却未标注来源。
+        关联 Action：content_understanding / content_understanding_2 / query_system_status（与文档核对）。
+        示例：读取/data/three_kingdoms.txt的章节 1–3，返回纯文本。
+
+    VertexLabelAdder
+
+        功能定位：在图数据库中创建/更新顶点（节点）标签及其属性定义。
+        输入/输出：输入为标签名、属性集合、约束（如唯一键）；输出为创建结果与状态。
+        何时使用：从概念模型落地到数据库 schema 的顶点定义阶段。
+        常见陷阱：属性未区分类别/类型；未为主键或业务唯一标识建约束与索引。
+        关联 Action：schema_design_and_import。
+        示例：创建 Person(name STRING UNIQUE, birth_date DATE)。
+
+    EdgeLabelAdder
+
+        功能定位：创建/更新边（关系）标签及其属性与方向定义。
+        输入/输出：输入为边类型名、起止顶点类型、方向、属性；输出为创建结果。
+        何时使用：设计关系类型（如 WorksAt、LocatedIn、ParticipatedIn）并落库。
+        常见陷阱：方向未定义清晰；边上重要属性（起止时间、权重）遗漏。
+        关联 Action：schema_design_and_import。
+        示例：创建 WorksAt(Person -> Organization, since DATE)。
+
+    GraphReachabilityGetter
+
+        功能定位：验证可达性（从某类节点到另一类节点是否存在有效路径/组合关系）。
+        输入/输出：输入为起止标签/样例节点、允许的关系集合/深度；输出为可达性结论与路径样例。
+        何时使用：建模后做“图是否可走通”的结构性校验，避免孤岛。
+        常见陷阱：仅验证某条具体路径而非模式级别；忽略方向与多跳条件。
+        关联 Action：graph_validation。
+        示例：检查 Person 是否能经 WorksAt -> LocatedIn 到达 City。
+        【Data / Schema / Import】
+
+    SchemaGetter
+
+        功能定位：读取当前图数据库已存在的 Schema（节点/边标签、属性、索引/约束）。
+        输入/输出：输入为库/图上下文；输出为结构化 schema 描述。
+        何时使用：执行查询前验证条件与类型；设计/导入数据前核对现状。
+        常见陷阱：未与期望模型比对差异；忽略索引现状导致后续查询慢。
+        关联 Action：schema_design_and_import / vertex_type_and_condition_validation / query_execution / algorithms_execution / schema_understanding。
+        示例：返回 Person, Organization, WorksAt 等标签定义清单。
+
+    DataStatusCheck
+
+        功能定位：检查当前数据状态（节点/边计数、是否已有同名标签/索引、脏数据情况）。
+        输入/输出：输入为目标图、可选过滤；输出为统计与一致性检查结果。
+        何时使用：数据导入前/后，确认库中是否存在冲突或需要清理的历史数据。
+        常见陷阱：忽略重复导入；不同版本 schema 下的数据不一致。
+        关联 Action：data_status_check。
+        示例：统计 Person 节点数量、是否存在重复 name。
+
+    DataImport
+
+        功能定位：将抽取出的三元组/结构化数据批量写入图数据库（节点、边、属性）。
+        输入/输出：输入为结构化实体、关系、属性集合；输出为导入结果统计与错误报告。
+        何时使用：抽取（Triplet）阶段完成后落库；可多次迭代导入。
+        常见陷阱：不校验主键/唯一约束导致重复；未分批/事务控制导致失败回滚成本高。
+        关联 Action：triplet_data_generation。
+        示例：批量写入 (Person{name:…})、(Person)-[WorksAt{since:…}]->(Org)。
+
+【Query / Execution】
+
+    CypherExecutor
+
+        功能定位：执行 Cypher 查询（读/写/聚合）并返回结果。
+        输入/输出：输入为 Cypher 文本与参数；输出为结果集或错误信息。
+        何时使用：经过类型/条件校验与补全后，真正触发查询或分析辅助查询。
+        常见陷阱：对不存在属性/索引的过滤；未做参数化导致注入风险（若对外暴露）。
+        关联 Action：query_execution / algorithms_execution（用于辅助查参或校验）。
+        示例：MATCH (p:Person {name:$name})-[:WorksAt]->(o) RETURN o LIMIT 10。
+
+【Algorithms / Graph Analytics】
+
+    AlgorithmsGetter
+
+        功能定位：列出/查询当前图数据库可用的图算法目录及其入参规范。
+        输入/输出：输入为算法名/类别过滤；输出为算法列表、版本、入参/出参说明。
+        何时使用：分析前选择合适算法与正确的参数（标签、关系、权重字段等）。
+        常见陷阱：以为任意图都可跑任意算法；未满足入参（如必须无向/连通/权重字段）。
+        关联 Action：algorithms_intention_identification。
+        示例：返回 PageRank, Louvain, Betweenness, ShortestPath… 及参数说明。
+
+    PageRankExecutor
+        功能定位：在图上运行 PageRank，计算节点重要性。
+        输入/输出：输入为节点/边范围、迭代/阻尼系数/权重；输出为每节点 PR 值。
+        何时使用：找“影响力/权威”节点（如文献引用、社交影响）。
+        常见陷阱：在不连通/方向不当的子图上跑；忽略权重字段。
+        关联 Action：algorithms_execution。
+        示例：对 (:Page)-[:LINKS_TO]->(:Page) 计算 PR。
+
+    BetweennessCentralityExecutor
+        功能定位：计算“中介中心性”，衡量节点作为最短路径“中转”的程度。
+        输入/输出：输入为节点/边集合与是否归一化；输出为每节点 betweenness。
+        何时使用：寻找“交通枢纽/桥梁节点”（社交关键中转、供应链瓶颈）。
+        常见陷阱：大图计算代价高；未限制子图造成性能问题。
+        关联 Action：algorithms_execution。
+        示例：对组织协作网络找关键协调人。
+
+    LouvainExecutor
+        功能定位：社区发现（无监督聚类），寻找紧密连接的簇。
+        输入/输出：输入为边范围/权重；输出为社区ID及模块度。
+        何时使用：用户分群、文档主题簇、业务群落划分。
+        常见陷阱：结果随权重/子图选取敏感；误读社区编号为语义标签。
+        关联 Action：algorithms_execution。
+        示例：对 User-Interacts-User 发现社群。
+
+    LabelPropagationExecutor
+
+        功能定位：标签传播社区检测（快速、近似）。
+        输入/输出：输入为图边与迭代轮数；输出为社区标签。
+        何时使用：需要快速粗粒度分群时。
+        常见陷阱：非确定性，重复运行结果略有差异；不适合强约束精细分群。
+        关联 Action：algorithms_execution。
+        示例：对海量交互网络快速分群。
+
+    ShortestPathExecutor
+
+        功能定位：最短路径（单源/两点间）。
+        输入/输出：输入为起终节点、权重/方向；输出为路径及长度。
+        何时使用：溯源、关系最短链路、路由/成本最小化。
+        常见陷阱：权重单位不一致；方向与允许的关系类型设置错误。
+        关联 Action：algorithms_execution。
+        示例：计算从 A 人到 B 人的最短“合作”链条。
+
+    NodeSimilarityExecutor
+
+        功能定位：节点相似度（常基于邻接或属性），寻找“像谁”。
+        输入/输出：输入为节点集合、相似度度量/阈值；输出为相似节点对与分数。
+        何时使用：推荐（相似用户/商品/论文）。
+        常见陷阱：未对属性/关系做标准化或权重设定导致噪声大。
+        关联 Action：algorithms_execution。
+        示例：找与某论文“最相似”的其他论文。
+
+    CommonNeighborsExecutor
+
+        功能定位：公共邻居数/比率等简单相似度指标。
+        输入/输出：输入为两节点或节点集合；输出为公共邻居指标。
+        何时使用：连接预测基线、社交推荐冷启动。
+        常见陷阱：忽略度数差异；在高度稀疏或超密图上解释偏差。
+        关联 Action：algorithms_execution。
+        示例：计算两用户的共同好友数。
+
+    KMeansExecutor
+
+        功能定位：KMeans 聚类（通常基于预先抽取的向量/属性特征）。
+        输入/输出：输入为节点特征向量与 K 值；输出为簇分配与质心。
+        何时使用：特征工程后做分群（与纯图结构类社区算法互补）。
+        常见陷阱：K 值选择随意；未标准化特征。
+        关联 Action：algorithms_execution。
+        示例：对论文的主题向量做 KMeans=20。
+
+【Retrieval / 外部资源】
+
+    KnowledgeBaseRetriever
+
+        功能定位：外部知识库检索（非图数据库），返回与查询相关的文档片段。
+        输入/输出：输入为查询词、领域/过滤条件；输出为文档列表+片段。
+        何时使用：Q&A 模式下优先查内部知识库（文档、笔记、FAQ）。
+        常见陷阱：检索不到时反复盲搜；未做分面/同义扩展。
+        关联 Action：knowledge_base_retrieving。
+        示例：检索“TuGraph 索引设计最佳实践”。
+
+    BrowserUsing（MCP / SSE）
+
+        功能定位：通过 MCP 协议的浏览器工具执行网页检索与抓取。
+        输入/输出：输入为搜索词/URL/抓取规则；输出为页面结构化内容或文本。
+        何时使用：知识库不足或需要最新信息时的补充检索。
+        常见陷阱：来源可信度低；未做交叉验证。
+        关联 Action：web_research。
+        示例：抓取近一周“Neo4j 5.x 最短路径 API 变更”。
+
+    FileTool（MCP / STDIO → @modelcontextprotocol/server-filesystem）
+
+        功能定位：在本地/沙盒文件系统中读取/枚举/引用文件，便于产出引用清单。
+        输入/输出：输入为文件路径/模式；输出为文件内容、路径、元数据。
+        何时使用：生成参考文献/原文引用清单、导出 Markdown 附件引用等。
+        常见陷阱：路径相对/权限问题；未固定版本导致结果变化。
+        关联 Action：reference_listing。
+        示例：列出 /refs/*.md 并生成引用表。
+
+【System / 监控】
+
+    SystemStatusChecker
+
+        功能定位：查询系统运行状态（可用性、环境变量、服务健康、依赖版本）。
+        输入/输出：输入为检查项（服务名、端口、依赖）；输出为健康度/告警信息。
+        何时使用：Leader 在任务分解前，先确认“系统是否就绪”。
+        常见陷阱：只检查单点；忽略网络/鉴权层依赖。
+        关联 Action：query_system_status。
+        示例：检查“Neo4j 服务 7687 是否存活、JDBC 连通性是否正常”。

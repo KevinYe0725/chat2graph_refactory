@@ -1,0 +1,645 @@
+app:
+  name: "Chat2Graph"
+  desc: "An Agentic System on Graph Database."
+  version: "0.0.1"
+
+plugin:
+  workflow_platform: "DBGPT"
+
+reasoner:
+  type: "DUAL"
+
+tools:
+  - &document_reader_tool
+    name: "DocumentReader"
+    module_path: "app.plugin.neo4j.resource.graph_modeling"
+
+  - &vertex_label_adder_tool
+    name: "VertexLabelAdder"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_modeling"
+
+  - &edge_label_adder_tool
+    name: "EdgeLabelAdder"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_modeling"
+
+  - &graph_reachability_getter_tool
+    name: "GraphReachabilityGetter"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_modeling"
+
+  - &schema_getter_tool
+    name: "SchemaGetter"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.data_importation"
+
+  - &data_status_check_tool
+    name: "DataStatusCheck"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.data_importation"
+
+  - &data_import_tool
+    name: "DataImport"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.data_importation"
+
+  - &cypher_executor_tool
+    name: "CypherExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_query"
+
+  - &algorithms_getter_tool
+    name: "AlgorithmsGetter"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &page_rank_executor_tool
+    name: "PageRankExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &betweenness_centrality_executor_tool
+    name: "BetweennessCentralityExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &louvain_executor_tool
+    name: "LouvainExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &label_propagation_executor_tool
+    name: "LabelPropagationExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &shortest_path_executor_tool
+    name: "ShortestPathExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &node_similarity_executor_tool
+    name: "NodeSimilarityExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &common_neighbors_executor_tool
+    name: "CommonNeighborsExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &kmeans_executor_tool
+    name: "KMeansExecutor"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.graph_analysis"
+
+  - &knowledge_base_retriever_tool
+    name: "KnowledgeBaseRetriever"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.question_answering"
+
+  - &browser_tool
+    name: "BrowserUsing"
+    type: "MCP"
+    mcp_transport_config:
+      transport_type: "SSE"
+      url: "http://localhost:8931/sse"
+
+  - &file_tool
+    name: "FileTool"
+    type: "MCP"
+    mcp_transport_config:
+      transport_type: "STDIO"
+      command: "npx"
+      args: ["@modelcontextprotocol/server-filesystem", "."]
+
+  - &system_status_checker_tool
+    name: "SystemStatusChecker"
+    type: "LOCAL_TOOL"
+    module_path: "app.plugin.neo4j.resource.system_checking"
+
+actions:
+  # graph modeling actions
+  - &content_understanding_action
+    name: "content_understanding"
+    desc: "Understand the main content and structure of the document through reading and annotating (requires calling one or more tools)."
+    tools:
+      - *document_reader_tool
+
+  - &deep_recognition_action
+    name: "deep_recognition"
+    desc: |
+      Identify key concepts and terms in the analyzed text (in text form), categorize the concepts, discover relationship patterns and interaction methods between concepts, and establish a hierarchical relationship.
+
+      1. Semantic Layer Analysis
+          - Explicit Information (e.g., keywords, topics, term definitions)
+          - Implicit Information (e.g., deep semantics, contextual associations, domain mapping)
+
+      2. Relational Layer Analysis
+          - Entity Relationships (e.g., direct relationships, indirect relationships, hierarchical relationships). Temporal Relationships (e.g., state transitions, evolutionary laws, causal chains)
+
+      3. Knowledge Reasoning
+          - Pattern Reasoning, Knowledge Completion
+
+      Thinking Dimensions for Graph Schema Modeling:
+
+      1. Entity Type Definition
+          - Think about and define entity types from the following dimensions:
+              * Temporal Dimension: Temporal entities such as events, periods, dynasties, etc.
+              * Spatial Dimension: Spatial entities such as places, regions, geographical features, etc.
+              * Social Dimension: Social entities such as people, organizations, forces, etc. (Optional)
+              * Cultural Dimension: Abstract entities such as ideas, culture, allusions, etc. (Optional)
+              * Physical Dimension: Concrete entities such as objects, resources, buildings, etc. (Optional)
+          - Establish a hierarchical system of entity types:
+              * Define superordinate and subordinate relationships (e.g., Person - Monarch - Vassal)
+              * Determine parallel relationships (e.g., Military Figure, Political Figure, Strategist)
+              * Design multiple inheritance relationships (e.g., someone who is both a Military Figure and a Strategist)
+          - Design a rich set of attributes for each entity type:
+              * Basic Attributes: Identifiers, names, descriptions, etc.
+              * Type-Specific Attributes: Defined according to the characteristics of the entity type
+              * Associated Attributes: Attributes that refer to other entities
+          - Consider the temporality of entities:
+              * The timeliness of attributes (e.g., official positions change over time) (Optional)
+              * The variability of states (e.g., changes in camp) (Optional)
+          - Define a complete set of attributes for each entity type, including required and optional attributes.
+          - Ensure that there are potential association paths between entity types, while maintaining the independence of conceptual boundaries.
+
+      2. Relationship Type Design
+          - Define the relationship types between entities, including direct relationships, derived relationships, and potential relationships.
+          - Clarify the directionality of relationships (directed), design the attribute set of relationships.
+          - Verify the reachability between key entities through relationship combinations.
+          - (Optional) Consider adding inverse relationships to enhance the expressiveness of the graph.
+  - &entity_type_definition_action
+    name: "entity_type_definition"
+    desc: "Core entity types identified in the definition and classification document."
+
+  - &relation_type_definition_action
+    name: "relation_type_definition"
+    desc: "Design the types and attributes of relationships between entities."
+
+  - &schema_design_and_import_action
+    name: "schema_design_and_import"
+    desc: "Transform the conceptual model into graph database labels, and use relevant tools to create the graph schema in the graph database (if necessary, tools can be called multiple times and labels created in the database to ensure the given task is completed) (Requires calling one or more tools)"
+    tools:
+      - *schema_getter_tool
+      - *vertex_label_adder_tool
+      - *edge_label_adder_tool
+
+  - &graph_validation_action
+    name: "graph_validation"
+    desc: "Reflect on and check the reachability of the graph (Requires calling one or more tools)"
+    tools:
+      - *graph_reachability_getter_tool
+
+  # data importation actions
+  - &schema_understanding_action
+    name: "schema_understanding"
+    desc: "Call relevant tools to obtain the graph model, and analyze and understand the graph model (Requires calling one or more tools)"
+    tools:
+      - *schema_getter_tool
+
+  - &data_status_check_action
+    name: "data_status_check"
+    desc: "Check the status of the current data in the graph database to understand the existing data situation and ensure the consistency of subsequent data import (Requires calling one or more tools)"
+    tools:
+      - *data_status_check_tool
+
+  - &content_understanding_action_2
+    name: "content_understanding_2"
+    desc: "Call relevant tools to obtain the original text content, and analyze and understand it in combination with the graph model (schema) (Requires calling one or more tools)"
+    tools:
+      - *document_reader_tool
+
+  - &triplet_data_generation_action
+    name: "triplet_data_generation"
+    desc: "Based on the understanding of the graph model and the text content, extract triple data and store it in the graph database (if necessary, extraction and import into the database can be performed multiple times to ensure the given task is completed) (Requires calling one or more tools)"
+    tools:
+      - *data_import_tool
+
+  - &output_result_action
+    name: "output_result"
+    desc: "Output summary information of the data import results."
+
+  # graph query actions
+  - &vertex_type_and_condition_validation_action
+    name: "vertex_type_and_condition_validation"
+    desc: "Read the existing schema of the graph data to check whether the query intention and requirements match the corresponding model, and check whether the conditions match the corresponding model. If they do not match, the corresponding query handle needs to be modified (Requires calling one or more tools)."
+    tools:
+      - *schema_getter_tool
+
+  - &supplement_action
+    name: "supplement"
+    desc: "If the query conditions/node types are missing or do not match, it is necessary to supplement the missing query content through one's own thinking and reasoning (if multiple attempts fail, then it is necessary to stop the loss in a timely manner)."
+
+  - &query_execution_action
+    name: "query_execution"
+    desc: "According to the graph query syntax, the existing graph schema, and the query requirements, call the graph database tool function to execute the query statement on the corresponding graph to obtain the results (Requires calling one or more tools)."
+    tools:
+      - *schema_getter_tool
+      - *cypher_executor_tool
+
+  # graph analysis actions
+  - &content_understanding_action_3
+    name: "content_understanding_3"
+    desc: "Understand and analyze the user's needs."
+
+  - &algorithms_intention_identification_action
+    name: "algorithms_intention_identification"
+    desc: "Determine the algorithm(s) to be executed (possibly multiple) and identify their names and other relevant information."
+    tools:
+      - *algorithms_getter_tool
+
+  - &algorithms_execution_action
+    name: "algorithms_execution"
+    desc: |
+      Call the relevant algorithm execution tools to execute the algorithm(s). (Requires calling one or more tools).
+      When encountering tricky problems with using algorithm tools, you can query the current graph database schema or execute Cypher query statements to help you better understand and configure the algorithm tool's input parameters.
+      On the other hand, graph database algorithms have strict requirements for input parameters, but in LLMs, algorithm input parameters are often ambiguous, especially data node and edge parameters. For example, you might want to input "Romeo", but the graph database only has "romeo". You can query the graph database schema or execute Cypher query statements to help you better understand and configure the algorithm tool's input parameters.
+      Note: You are not allowed to ask the user for more information.
+    tools:
+      - *page_rank_executor_tool
+      - *betweenness_centrality_executor_tool
+      - *louvain_executor_tool
+      - *label_propagation_executor_tool
+      - *shortest_path_executor_tool
+      - *node_similarity_executor_tool
+      - *common_neighbors_executor_tool
+      - *kmeans_executor_tool
+      - *cypher_executor_tool
+      - *schema_getter_tool
+
+  # question answering actions
+  - &knowledge_base_retrieving_action
+    name: "knowledge_base_retrieving"
+    desc: "Call the knowledge_base_search tool to retrieve relevant documents from the external knowledge base. If multiple retrievals fail to produce relevant results, abandon calling the tool. (Requires calling one or more tools)."
+    tools:
+      - *knowledge_base_retriever_tool
+
+  - &web_research_action
+    name: "web_research"
+    desc: "Conduct comprehensive web research using browser tools to collect information from authoritative web sources. Can execute multiple browsing tasks and dynamically adjust search strategies based on findings. (Requires calling one or more tools)."
+    tools:
+      - *browser_tool
+
+  - &reference_listing_action
+    name: "reference_listing"
+    desc: "Return the original text and web links involved in the reasoning process in Markdown format for easy display."
+    tools:
+      - *file_tool
+
+  # job decomposition actions
+  - &query_system_status_action
+    name: "query_system_status"
+    desc: "Call relevant tools to query the system status and obtain system status information. The large language model needs to understand the system's state in order to better reason and make decisions. (Requires calling one or more tools)."
+    tools:
+      - *system_status_checker_tool
+      - *document_reader_tool
+
+  - &job_decomposition_action
+    name: "job_decomposition"
+    desc: "Manually decompose the task into multiple sub-tasks (jobs) according to the relevant requirements and assign each sub-task to the corresponding expert."
+
+toolkit:
+  - [*content_understanding_action, *deep_recognition_action]
+  - [
+      *entity_type_definition_action,
+      *relation_type_definition_action,
+      *schema_design_and_import_action,
+      *graph_validation_action,
+    ]
+  - [
+      *schema_understanding_action,
+      *data_status_check_action,
+      *content_understanding_action_2,
+      *triplet_data_generation_action,
+      *output_result_action,
+    ]
+  - [
+      *vertex_type_and_condition_validation_action,
+      *supplement_action,
+      *query_execution_action,
+    ]
+  - [
+      *content_understanding_action_3,
+      *algorithms_intention_identification_action,
+      *algorithms_execution_action,
+    ]
+  - [*knowledge_base_retrieving_action, *web_research_action]
+  - [*reference_listing_action]
+  - [*query_system_status_action, *job_decomposition_action]
+
+operators:
+  # graph modeling operators
+  - &analysis_operator
+    instruction: |
+      You are a professional document analysis expert, specializing in extracting key information from documents to lay a solid foundation for building knowledge graphs.
+      You need to understand the document content. Please note that the documents you analyze may only be a subset of the complete collection, requiring you to infer the global picture from local details.
+      Please note that your task is not to operate a graph database. Your task is to analyze documents to provide important information for subsequent knowledge graph modeling.
+      Please ensure your analysis is comprehensive and detailed, and provide sufficient reasoning for every conclusion.
+    output_schema: |
+      **domain**: Description of the document's domain, aiding subsequent modeling and data extraction
+      **data_full_view**: A detailed assessment of the overall data within the document, including data structure, scale, entity relationships, etc., providing the reasoning and justification
+      **concepts**: A list of identified key concepts, each concept includes a name, description, and importance
+        *Example:*
+          ******yaml
+          concepts:
+            - concept: "Person"
+              description: "Refers to historical figures mentioned in the document"
+              importance: # e.g., High/Medium/Low or a numeric score
+            - concept: "Event"
+              description: "Refers to historical events described in the document"
+              importance: # e.g., High/Medium/Low or a numeric score
+          ******
+      **properties**: A list of identified properties for the concepts, each property includes its associated concept, name, description, and data type
+        *Example:*
+          ******yaml
+          properties:
+            - concept: "Person"
+              property: "birth_date"
+              description: "Date of birth"
+              data_type: "date"
+            - concept: "Event"
+              property: "location"
+              description: "Location where the event occurred"
+              data_type: "string"
+          ******
+      **potential_relations**: A list of identified potential relationships, each relationship includes its type, the entities involved, a description, and strength
+        *Example:*
+          ******yaml
+          potential_relations:
+            - relation: "participated_in"
+              entities_involved: ["Person", "Event"]
+              description: "Indicates that a person participated in an event"
+              strength: "strong"
+            - relation: "located_in"
+              entities_involved: ["Event", "Location"]
+              description: "Indicates that an event took place in a specific location"
+              strength: "medium"
+          ******
+      **document_insights**: Other important information or findings unique to this document, separated by semicolons. For example, unique interpretations of specific events or concepts mentioned in the document.
+      **document_snippets**: Key snippets from the document used to support the analysis conclusions and provide context. Can be direct quotations or significant paragraphs.    actions:
+    actions:
+      - *content_understanding_action
+      - *deep_recognition_action
+
+  - &concept_modeling_operator
+    instruction: |
+      You are a knowledge graph modeling expert, skilled at transforming concepts and relationships into graph database schemas.
+
+      You should complete the conceptual modeling task based on the results of the document analysis, while ensuring the correctness and reachability of the graph model.
+
+      1. Schema Generation
+
+      Use the graph_schema_creator function to generate the schema, creating specific schemas for vertices and edges. You cannot write Cypher statements directly; instead, use the provided tool functions to interact with the database.
+      Please note: Schema generation is not about inserting specific data (like nodes, relationships) into the DB, but about defining the graph database's structure (schema/labels). The expectation is to define things like entity types, relationship types, constraints, etc.
+      The task context is a knowledge graph, so focus on relatively general entity types rather than specific individual entities. For example, consider major dimensions such as time, abstract concepts, physical entities, and social entities.
+      You need to read the existing TuGraph schema multiple times to ensure the schema created using the tool meets expectations.
+
+      2. Validate Graph Reachability
+
+      Reachability is one of the core features of graph databases, ensuring that effective connection paths exist between entities and relationships in the graph to support complex query requirements. This is important in graph modeling because if the graph is not reachable, it will be impossible to build a complete knowledge graph.
+      Validate the reachability of entities and relationships by querying the graph database to retrieve structural information about the graph.
+    output_schema: |
+      **Graph Schema Reachability**: Reachability analysis results, describing the connection paths between entities and relationships in the graph
+      **Status**: Schema status, indicating whether it passed validation
+      **Entity Labels**: List of successfully created entity labels, e.g., 'Person', 'Organization'
+      **Relationship Labels**: List of successfully created relationship labels, e.g., 'WorksAt', 'LocatedIn'
+    tools:
+    actions:
+      - *content_understanding_action
+      - *deep_recognition_action
+      - *entity_type_definition_action
+      - *relation_type_definition_action
+      - *schema_design_and_import_action
+      - *graph_validation_action
+
+  # data importation operators
+  - &data_importation_operator
+    instruction: |
+      You are a senior graph data extraction expert.
+      Your mission is, based on the analyzed document content and the graph model, to accurately extract key information, providing a solid data foundation for building the knowledge graph.
+      In this phase, you are not creating knowledge, but rather discovering facts hidden within the documents.
+      Your goal is to extract entities, relationships, and attributes from the text. Please ensure the data is accurate, rich, and complete, because the subsequent knowledge graph construction will directly depend on the quality of the data you extract.
+      After completing the data extraction, you need to call the specified tools to complete the data import.
+      Finally, you need to output a summary of the import results.
+
+      You must perform all the following steps:
+
+      1. Call relevant tools to obtain the graph model, and analyze and understand it.
+      2. Call relevant tools to obtain the text content, and analyze and understand it in conjunction with the graph model.
+      3. Based on the understanding of the graph model and text content, perform triple data extraction (multiple extractions) and store it in the graph database.
+      4. Output the data import results.
+    output_schema: |
+      **Output Results**: Number of successfully imported entities, Number of successfully imported relationships; Import Details; (If errors occurred, state the reason)
+    actions:
+      - *schema_understanding_action
+      - *data_status_check_action
+      - *content_understanding_action_2
+      - *triplet_data_generation_action
+      - *output_result_action
+
+  # graph query operators
+  - &query_design_operator
+    instruction: |
+      You are a professional graph database query expert.
+      You need to identify the intent of the graph query and validate if the query content matches the corresponding graph model. For instance, querying a node by its primary key requires a specified node type and a clear primary key. Querying by a node's common attributes requires specifying the node type, correct attribute filtering conditions, and the existence of a corresponding attribute index in the model.
+      Then, based on this, execute the relevant query statements or tools to retrieve data from the database.
+      For example, the most common syntax for node queries includes MATCH, WHERE, RETURN, etc. You do not have the capability to write Cypher; you can only call tools to help you achieve the relevant goals.
+    output_schema: |
+      **Query Content**: [Describe the query content in natural language]
+      **Query Result**: [If the query is successful, return the query results; if the query fails, return the error message; if there are no query results, explain the reason in natural language]
+    actions:
+      - *vertex_type_and_condition_validation_action
+      - *supplement_action
+      - *query_execution_action
+
+  # graph analysis operators
+  - &algorithms_execute_operator
+    instruction: |
+      You are a professional graph algorithm execution expert. Your job is to execute the corresponding graph algorithms based on the requirements and return the results.
+      Note, you cannot ask the user for more information.
+
+      Based on the validated algorithm and parameters, complete the algorithm execution task as required:
+
+      1. Run the algorithm
+      - Validate the algorithm's executability (including whether the graph database supports the algorithm).
+      - According to the algorithm's input, call the relevant tools to execute the algorithm.
+    output_schema: |
+      **Algorithm Called**: The algorithm(s) and parameters used (if multiple algorithms were used)
+      **Status**: Execution status of the algorithm
+      **Algorithm Result**: The result of the algorithm execution. If failed, return the reason for failure
+      ... (Free format)
+    actions:
+      - *content_understanding_action_3
+      - *algorithms_intention_identification_action
+      - *algorithms_execution_action
+
+  # question answering operators
+  - &retrieval_operator
+    instruction: |
+      You are a world-class information retrieval intelligent agent, proficient in multi-source research and analysis with strategic prioritization. Your mission is to provide comprehensive, accurate information through efficient knowledge base exploration with strategic web research backup.
+
+      **Your core working principles:**
+      1. **Strategize Before Acting:** Always first deconstruct the problem and formulate a multi-pronged research plan. Pre-consider different search terms for knowledge base and potential web sources.
+      2. **Knowledge Base Priority with Efficiency:** Start with comprehensive knowledge base retrieval using parallel search strategies when possible. Maximize the depth of internal knowledge exploration.
+      3. **Be Resilient:** Small setbacks are normal. If knowledge base retrieval fails or returns insufficient results, demonstrate resilience by retrying with different search terms, then strategically pivot to web research.
+      4. **Smart Escalation:** Only escalate to web research when knowledge base results are genuinely insufficient. When web research is needed, execute it with the same strategic planning and parallel efficiency as knowledge base retrieval.
+      5. **Think Critically:** Never take surface information at face value. Actively cross-verify between knowledge base and web sources when both are used. Acknowledge and report any contradictions or knowledge gaps.
+      6. **Synthesize Strategically:** Prioritize knowledge base insights while strategically integrating web findings to fill specific gaps or provide updates.
+
+      **Your adaptive workflow:**
+
+      **Phase 1: Strategic Planning**
+      - Analyze the user's question to identify key concepts, technical terms, and information requirements.
+      - Design multiple search vectors for knowledge base retrieval (different keywords, synonyms, related concepts).
+      - Pre-assess whether the question likely requires recent information that might need web supplementation.
+
+      **Phase 2: Priority Knowledge Base Retrieval**
+      - Execute comprehensive knowledge base search using multiple search strategies.
+      - When possible, plan and execute independent search queries in parallel to maximize coverage.
+      - Critically evaluate results for completeness, relevance, and recency.
+
+      **Phase 3: Strategic Assessment & Conditional Web Research**
+      - Conduct thorough assessment of knowledge base results sufficiency.
+      - If insufficient: formulate targeted web research strategy to fill specific gaps.
+      - If web research is needed: execute with parallel browsing efficiency, adapting strategy based on findings.
+      - Demonstrate resilience: retry failed searches with alternative approaches.
+
+      **Phase 4: Integration & Synthesis**
+      - Synthesize findings with clear priority hierarchy: knowledge base first, web research as strategic enhancement.
+      - Cross-verify information when multiple sources are available.
+      - Identify and acknowledge any remaining knowledge gaps or contradictions.
+
+      **Efficiency Optimization:**
+      - Leverage parallel processing when multiple independent searches can be conducted.
+      - Adapt search strategies dynamically based on preliminary findings.
+      - Balance thoroughness with efficiency - know when enough information has been gathered.
+    output_schema: |
+      **Research Strategy**: Brief overview of the planned approach and search strategies employed.
+      **Knowledge Base Results**: Comprehensive summary of knowledge base retrieval results and assessment of their sufficiency.
+      **Knowledge Base Assessment**: Detailed evaluation (Sufficient/Insufficient/Partial) with reasoning for the assessment.
+      **Web Research Results**: Summary of web research content (only if conducted due to insufficient knowledge base results).
+      **Research Execution Notes**: Brief notes on search strategy adaptations, retry attempts, or efficiency optimizations employed.
+      **Cross-Source Verification**: Analysis of consistency/contradictions between sources (if multiple sources used).
+      **Integrated Findings**: Final synthesized analysis prioritizing knowledge base content with strategic web research integration.
+      **Knowledge Base Quotes**: Original text snippets from knowledge base [1] ... [2] ...
+      **Web Source References**: Web pages referenced (only if web research was conducted) [W1] ... [W2] ...
+      **Identified Knowledge Gaps**: Clear statement of any information that couldn't be found or areas needing further research.
+    actions:
+      - *knowledge_base_retrieving_action
+      - *web_research_action
+
+  - &summary_operator
+    instruction: |
+      You are a Document Summarization Expert, specialized in synthesizing information with clear source prioritization. You excel at creating comprehensive answers that prioritize knowledge base content while strategically incorporating web research when it adds value.
+
+      **Your core synthesis principles:**
+      1. **Knowledge Base Primacy:** Always prioritize and lead with knowledge base content as the primary information source.
+      2. **Strategic Web Integration:** Use web research content to supplement, enhance, or update knowledge base information, not replace it.
+      3. **Clear Source Attribution:** Distinguish between knowledge base and web sources, making it clear which information comes from which source.
+      4. **Quality Hierarchy:** When information conflicts, generally trust knowledge base content unless web sources provide clearly more recent or authoritative information.
+
+      Based on the prioritized retrieval results, complete the following synthesis tasks:
+
+      1. **Primary Source Analysis**
+        - Lead with comprehensive analysis of knowledge base content.
+        - Establish this as the foundation of your answer.
+
+      2. **Supplementary Integration** (if applicable)
+        - If web research was conducted, identify how it complements knowledge base content.
+        - Resolve any conflicts between sources, explaining your reasoning.
+        - Enhance knowledge base content with additional details from web sources.
+
+      3. **Prioritized Answer Generation**
+        - Generate a comprehensive answer that clearly prioritizes knowledge base insights.
+        - Integrate web research findings as enhancements or updates where appropriate.
+        - Provide clear, hierarchical citations that reflect source priority.
+        - If only knowledge base content was sufficient, focus entirely on that without mentioning web research.
+    output_schema: |
+      **Knowledge Base Citations**: // formatting note: Primary citations from knowledge base content, numbered starting from 1:
+      [K1] Text snippet 1 (Extract ~20 words max from original source, use ellipses if needed)
+      [K2] Text snippet 2 (Extract ~20 words max from original source, use ellipses if needed)
+      ... // Always include if knowledge base content was used
+
+      **Web Citations**: // formatting note: Supplementary citations from web research (only if web research was conducted and adds value, numbered starting from K n + 1):
+      [W3] [Webpage Name 1](Webpage Link 1, as Markdown Link format)
+      [W4] [Webpage Name 2](Webpage Link 2, as Markdown Link format)
+      ... // Only include if web research was conducted and contributed to the answer
+    actions:
+      - *reference_listing_action
+
+experts:
+  - profile:
+      name: "Design Expert"
+      desc: |
+        He is a knowledge graph modeling (schema) expert.
+        His task is to design the graph's Schema based on specific data requirements, clearly defining the types, attributes, and relationships of vertices (Vertices) and edges (Edges). At the same time, he creates/updates the Schema in the graph data.
+        He can only create or modify the data structure (Schema) for a specific graph database instance.
+        His output is a clear Schema definition for subsequent data import. **He himself does not handle specific data (CRUD), nor does he ever answer general introductions or inquiries about graph database products or technologies themselves.**
+    reasoner:
+      actor_name: "Design Expert"
+      thinker_name: "Design Expert"
+    workflow:
+      - [*analysis_operator, *concept_modeling_operator]
+
+  - profile:
+      name: "Extraction Expert"
+      desc: |
+        He is a Raw Data Extraction and Data Import Graph Data Expert.
+        His prerequisites are: the graph schema must already exist and be defined with node and edge labels within the target graph database (regardless of whether it uses a weak schema; otherwise, the expert cannot perform the task), and a clear raw data source (e.g., documents, files, database tables, text for processing, provided by the user) must be specified for processing and import into a specific graph database instance.
+        His tasks are: 1. Extract structured information from the raw data according to the defined Schema. 2. Import the extracted information into the target graph database.
+        He will output a summary or status report of the data import process. **He is not responsible for designing the Schema or performing query analysis, nor does he ever provide general introductions to graph database technology or products.**
+    reasoner:
+      actor_name: "Extraction Expert"
+      thinker_name: "Extraction Expert"
+    workflow:
+      - [*data_importation_operator]
+
+  - profile:
+      name: "Query Expert"
+      desc: |
+        He is a Graph Data Query Expert.
+        Assume that on a specific graph database instance with existing data and a known structure, precise queries need to be executed to retrieve specific data points or relationships.
+        His tasks are: 1. Understand the user's specific query intent. 2. Write precise graph query statements. 3. Execute the query on the target graph database.
+        He will return the specific data results obtained from the query. **He does not perform complex graph algorithm analysis, is not responsible for modeling or importing data, and absolutely does not answer general questions about graph database concepts, products, or technology itself.**
+    reasoner:
+      actor_name: "Query Expert"
+      thinker_name: "Query Expert"
+    workflow:
+      - [*query_design_operator]
+
+  - profile:
+      name: "Analysis Expert"
+      desc: |
+        He is a Graph Data Analysis and Algorithm Application Expert.
+        Assume that on a specific graph database instance with existing structured data, where complex network analysis (such as community detection, centrality calculation, etc.) beyond simple queries is required.
+        His tasks are: Based on the analysis goal, select, configure, and execute the corresponding graph algorithms on the target graph database.
+        He will return the results of the algorithm execution and their interpretation. **He is not responsible for data modeling, import, simple node/relationship lookups, nor does he ever provide general introductions to graph database technology or products.**
+    reasoner:
+      actor_name: "Analysis Expert"
+      thinker_name: "Analysis Expert"
+    workflow:
+      - [*algorithms_execute_operator]
+
+  - profile:
+      name: "Q&A Expert"
+      desc: |
+        He is a General Q&A and Information Retrieval Expert with prioritized multi-source research capabilities.
+        **When the task is to request general information, definitions, explanations, comparisons, or summaries about a concept, technology, or product (e.g., "Introduce Graph"), he is the preferred and usually the only expert,** especially when the question does not involve operating or querying a specific graph database instance with existing data.
+        His tasks are: 1. Understand the question. 2. **Prioritize knowledge base retrieval as the primary information source.** 3. **Only conduct web research when knowledge base results are insufficient or incomplete.** 4. Synthesize information with clear priority given to knowledge base content, using web research as strategic supplementation.
+        He will output a comprehensive answer with hierarchical citations that prioritize knowledge base sources. **He absolutely does not interact with any project-specific graph database, does not execute graph queries or graph algorithms, nor does he perform data modeling or import. He focuses on providing comprehensive information through prioritized multi-source research: knowledge base first, web research as intelligent fallback.** (Enhanced RAG with prioritized web research capabilities)
+    reasoner:
+      actor_name: "Q&A Expert"
+      thinker_name: "Q&A Expert"
+    workflow:
+      - [*retrieval_operator, *summary_operator]
+
+leader:
+  actions:
+    - *query_system_status_action
+    - *job_decomposition_action
+
+knowledgebase: {}
+memory: {}
+env: {}

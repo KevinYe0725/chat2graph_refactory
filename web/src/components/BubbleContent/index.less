@@ -1,0 +1,142 @@
+.bubble-content {
+
+
+    &-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+    }
+
+    &-steps {
+        overflow: hidden;
+
+
+        transition: height 0.2s;
+
+    }
+
+    &-message {
+        padding: 4px 16px 0;
+
+        p {
+            white-space: pre-wrap;
+        }
+    }
+
+    &-status {
+        margin-left: 6px;
+
+        &-text {
+            font-size: 14px;
+            color: #363740;
+            line-height: 20px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+    }
+
+    :global {
+        .ant-steps-item-title {
+            width: 100%;
+        }
+
+        .ant-steps-item-description {
+            font-size: 14px;
+            color: #363740 !important;
+            line-height: 22px;
+        }
+
+        .ant-steps-item-wait>.ant-steps-item-container>.ant-steps-item-tail::after {
+            background-color: #dddddf;
+        }
+
+        .ant-collapse {
+            border: none;
+        }
+
+        .ant-collapse-collapsible-header {
+            background-color: #fff;
+
+        }
+
+        .ant-collapse>.ant-collapse-item>.ant-collapse-header {
+            padding: 18px 16px;
+        }
+
+        .ant-collapse>.ant-collapse-item-active>.ant-collapse-header {
+            padding: 18px 16px 0;
+        }
+
+        .ant-collapse-content {
+            border-top: none;
+        }
+
+        .ant-collapse .ant-collapse-content>.ant-collapse-content-box {
+            padding: 16px 16px 0;
+        }
+    }
+
+    &-footer {
+        display: flex;
+        padding: 0 16px 16px;
+
+        &-recover {
+            display: flex;
+            font-size: 14px;
+            color: #98989d;
+            line-height: 24px;
+            cursor: pointer;
+            font-family: 'PingFangSC-Regular';
+        }
+    }
+}
+
+.title {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0 4px;
+
+
+
+    &-content {
+        font-size: 16px;
+        color: #363740;
+        line-height: 24px;
+        font-weight: 500;
+    }
+
+    &-extra {
+        font-size: 12px;
+        color: #6a6b71;
+        line-height: 20px;
+        text-align: right;
+    }
+}
+
+.step-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.step-thinks {
+    &-title {
+        font-weight: 500;
+    }
+}
+.runningBar {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  /* 左转圈，右时间，中间留白 */
+}
+
+.runningTime {
+  margin-left: auto;            /* 时间推到最右侧 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: #8b8c91;
+  letter-spacing: 0.3px;
+}

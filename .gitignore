@@ -1,0 +1,25 @@
+.*
+!.gitignore
+!.github
+*.lock
+.idea
+dist
+venv
+__pycache__
+
+# ignore db instances
+**/*.db
+
+app/server/web/*
+web/node_modules
+web/.env.local
+web/config/config.local.ts
+web/src/.umi
+web/src/.umi-production
+web/src/.umi-test
+web/.umi
+web/.umi-production
+web/.umi-test
+web/dist
+web/.mfsu
+web/.swc
