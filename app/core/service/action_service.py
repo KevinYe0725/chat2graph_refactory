@@ -5,9 +5,15 @@ from functools import lru_cache
 from typing import Any, Dict, List, Callable
 from dataclasses import asdict
 
+from app.core.central_orchestrator.version_management_center.execution_context_provider import execution_context_service
+from app.core.central_orchestrator.version_management_center.record import ActionExecutionRecord
+from app.core.central_orchestrator.version_management_center.vmc_provider import vmc
+from app.core.common.type import MessageSourceType
 from app.core.model.job import Job
 
 from app.core.model.message import WorkflowMessage, ModelMessage
+from app.core.reasoner.model_service import ModelService
+from app.core.reasoner.model_service_factory import ModelServiceFactory
 
 from app.core.toolkit.action import Action
 
@@ -36,39 +42,93 @@ class ActionService(metaclass=Singleton):
 
     # ---------- 执行 ----------
     #这个执行操作明天还是要重写的🤣
-    def execute(self, name: str, **kwargs):
-        """执行 Action 内部绑定的所有 Tool.function()"""
-        action = self.create(name)
-        start = time.time()
+    async def execute_actions_pipeline(self, action_name: str, inputs :Dict[str, Any]):
 
-        results = []
-        try:
-            for tool in action.tools:
-                func = tool.function
-                print(f"[ActionService] ⚙️ 调用工具: {tool.name} ({tool.description})")
-                result = func(**kwargs)
-                results.append(
-                    {
-                        "tool_name": tool.name,
-                        "output": result,
-                        "tool_type": tool.tool_type.name,
-                    }
-                )
+        action = self.registry.get(action_name)
+        # === 1) 准备模型服务 ===
+        model_service: ModelService = ModelServiceFactory.get_model_for_action(
+            action.model_name,
+        )
+        sys_prompt = ""
 
-            elapsed = time.time() - start
-            print(f"[ActionService] ✅ Action '{name}' 执行完成，用时 {elapsed:.3f}s")
-            return {
-                "status": "success",
-                "action": name,
-                "results": results,
-                "time": elapsed,
-            }
+        # === 2) 解析输入 ===
+        task: str = inputs["task"]
+        message_obj: WorkflowMessage = inputs["message"]
+        job = inputs["job"]
+        payload = message_obj.get_payload()
+        if isinstance(payload, str):
+            payload = json.loads(payload)
 
-        except Exception as e:
-            elapsed = time.time() - start
-            print(f"[ActionService] ❌ Action '{name}' 执行失败: {e}")
-            return {"status": "fail", "error": str(e), "time": elapsed}
+        # 将本 action 的任务写入 payload
+        payload["action_input"]["instruction"] = task
+        message_str = json.dumps(payload, ensure_ascii=False)
 
+        init_message = ModelMessage(
+            payload=message_str,
+            job_id=inputs["job_id"],
+            source_type=MessageSourceType.THINKER,
+            step=1,
+        )
+        messages: List[ModelMessage] = [init_message]
+
+        # === 3) 获取执行上下文 ===
+
+        expert_name: str = job.assigned_expert_name
+        ctx = execution_context_service.get_execution_context(expert_name)
+
+        action_id = action.id
+        action_span_id = ctx.new_action_span(action_id)
+        parent_span_id = ctx.get_action_parent_span()
+
+        # === 4) 调用模型 ===
+        start_time = time.time()
+        result: ModelMessage = await model_service.generate(
+            sys_prompt=sys_prompt,
+            messages=messages,
+            tools=action.tools,
+        )
+        end_time = time.time()
+
+        # === 5) 提取模型输出 ===
+        payload_str: str = result.get_payload()
+        payload_json = json.loads(payload_str)
+
+        output_text = payload_json.get("text")
+        stats = payload_json.get("tokens", {})
+        input_tokens = stats.get("input", 0)
+        output_tokens = stats.get("output", 0)
+        total_tokens = stats.get("total", input_tokens + output_tokens)
+
+        latency_ms = (end_time - start_time) * 1000
+
+        # === 6) 构建 ActionExecutionRecord ===
+        record = ActionExecutionRecord(
+            action_id=action_id,
+            operator_id=inputs["operator_id"],
+            workflow_version_id=ctx.workflow_version_id,
+            expert_name=expert_name,
+
+            instruction=action.description,
+            structured_input=inputs.get("action_input", {}),
+
+            raw_output_text=output_text,
+            structured_output=output_text,
+            error=None,
+
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+            latency_ms=latency_ms,
+
+            trace_id=ctx.trace_id,
+            span_id=action_span_id,
+            parent_span_id=parent_span_id,
+        )
+
+        # === 7) 发送记录到 VMC ===
+        vmc.log_action(record)
+
+        return result
     # ---------- 辅助 ----------
     def list_actions(self):
         return self.registry.list()
@@ -142,6 +202,7 @@ class ActionPipeline:
         self.input_messages: WorkflowMessage = summarized_input_message
         self.operator_id = operator_id
         self.job:Job = job
+        self.action_service:ActionService = ActionService.instance
 
     def _group_by_order(self) -> Dict[int, List[str]]:
         """按 order 分层（返回每层的 Action 名称列表）"""
@@ -182,7 +243,7 @@ class ActionPipeline:
         inputs["job"] = self.job
         inputs["message"] = self.input_messages
         inputs["operator_id"] = self.operator_id
-        result: ModelMessage = await action.run(inputs)
+        result: ModelMessage = await self.action_service.execute_actions_pipeline(name ,inputs)
         print(f"✅ [{name}] 输出: {result}")
         return result
 

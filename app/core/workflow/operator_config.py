@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import List, Dict, Any
 from uuid import uuid4
 
 from app.core.toolkit.action import Action

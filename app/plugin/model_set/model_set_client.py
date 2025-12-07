@@ -1,13 +1,10 @@
 import json
 from typing import List, Optional
 
-from dbgpt.model.utils.llm_utils import parse_model_request
 
 from app.core.common.type import MessageSourceType
 
 from app.core.model.llm_model import LLMModel
-from app.core.prompt.model_service import FUNC_CALLING_PROMPT
-from dbgpt.core import ModelRequest, SystemMessage, BaseMessage
 
 from app.core.model.message import ModelMessage
 from app.core.model.task import ToolCallContext

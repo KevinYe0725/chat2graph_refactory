@@ -1,0 +1,3 @@
+from app.core.central_orchestrator.version_management_center.execution_context_service import ExecutionContextService
+
+execution_context_service = ExecutionContextService()

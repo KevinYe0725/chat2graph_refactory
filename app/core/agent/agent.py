@@ -11,6 +11,7 @@ from app.core.service.job_service import JobService
 from app.core.service.message_service import MessageService
 from app.core.workflow.operator import Operator
 from app.core.workflow.workflow import Workflow
+from app.plugin.dbgpt.dbgpt_workflow import DbgptWorkflow
 
 
 @dataclass

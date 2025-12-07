@@ -55,4 +55,3 @@ class ActionExecutionDo(Do):
     parent_span_id = Column(String(128), nullable=True)
 
     # extra metadata
-    metadata = Column(JSON, nullable=True)

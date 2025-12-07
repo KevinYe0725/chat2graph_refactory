@@ -23,4 +23,3 @@ class WorkflowExecutionDo(Do):
     # list of OperatorExecutionDo ids
     operator_record_ids = Column(JSON, nullable=True)
 
-    metadata = Column(JSON, nullable=True)

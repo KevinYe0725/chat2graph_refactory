@@ -6,15 +6,9 @@ from app.core.model.llm_model import LLMModel
 
 
 class ModelRegistryService(metaclass=Singleton):
-    """
-    一个全局的模型注册器，用来管理所有 ModelService。
-    作用：
-      1. 在应用启动时初始化所有 model（从 AgenticConfig.models）
-      2. 按 model_name 获取对应的 ModelService（Action 会用到）
-    """
 
-    _registry: Dict[str, LLMModel] = {}
 
+    _registry: Dict[str, LLMModel] = {"fake": LLMModel(name="fake",model_type="fake",api_key="fake",system_prompt="ghupgwhrguhwrpg")}
     @classmethod
     def init(cls, model_configs: List[ModelConfig]):
         """

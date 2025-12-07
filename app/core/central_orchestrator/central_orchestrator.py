@@ -1,4 +1,3 @@
-from pygments.lexer import words
 
 from app.core.central_orchestrator.command_bus.command_handler import command_handler
 from app.core.central_orchestrator.supervisor.supervisor_manager import SupervisorManager
@@ -15,7 +14,6 @@ class CentralOrchestrator(metaclass=Singleton):
         self._workflows: dict[str, Workflow] = {}
         self.supervisor_manager = SupervisorManager() # 外部注入 SupervisorManager
         self._operator_service:OperatorService = OperatorService.instance
-        self._execution_contexts:dict[str, ExecutionContext] = {}
         import threading
         self._condition = threading.Condition()
         self._can_continue = False
@@ -73,8 +71,3 @@ class CentralOrchestrator(metaclass=Singleton):
         workflow = self._workflows[expert_name]
         workflow.rollback(to_op_id)
 
-    def set_execution_context(self, expert_name:str, context: ExecutionContext) -> None:
-        self._execution_contexts[expert_name] = context
-
-    def get_execution_context(self,expert_name:str) -> ExecutionContext:
-        return self._execution_contexts[expert_name]

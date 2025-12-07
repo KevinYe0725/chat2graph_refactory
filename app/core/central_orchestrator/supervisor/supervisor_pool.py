@@ -3,16 +3,12 @@
 import threading
 from queue import Queue, Empty
 from typing import Callable, Optional, Dict, Any
-
-from app.plugin.dbgpt.dbgpt_workflow import DbgptWorkflow
-
-from app.core.workflow.workflow import Workflow
-
 from app.core.agent.agent import AgentConfig, Profile
 
 from app.core.central_orchestrator.supervisor.supervisor import Supervisor
 from app.core.model.message import AgentMessage
 from app.core.reasoner.simple_reasoner import SimpleReasoner
+from app.plugin.dbgpt.dbgpt_workflow import DbgptWorkflow
 
 
 class SupervisorPool:
@@ -38,7 +34,7 @@ class SupervisorPool:
         supervisor_config = AgentConfig(
             profile=Profile(name="supervisor",description="used to inspect every operator"),
             reasoner=SimpleReasoner(),
-            workflow = DbgptWorkflow(),
+            workflow= DbgptWorkflow()
         )
         # worker 线程列表
         self.workers = []

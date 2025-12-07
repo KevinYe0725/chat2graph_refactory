@@ -4,14 +4,8 @@ import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
-from dbgpt.model.cluster import ModelRegistry
-from packaging.metadata import Metadata
-
-from app.core.common.singleton import Singleton
-
 from app.core.common.type import FunctionCallStatus
 from app.core.common.util import parse_jsons
-from app.core.model.agentic_config import ModelConfig
 from app.core.model.llm_model import LLMModel
 from app.core.model.message import ModelMessage
 from app.core.model.task import Task, ToolCallContext

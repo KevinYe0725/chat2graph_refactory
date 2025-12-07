@@ -45,4 +45,3 @@ class OperatorExecutionDo(Do):
     # Overall performance
     latency_ms = Column(Float, nullable=True)
 
-    metadata = Column(JSON, nullable=True)
