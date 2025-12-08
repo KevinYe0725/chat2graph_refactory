@@ -134,6 +134,13 @@ class AgenticService(metaclass=Singleton):
         GraphDbWrapper(graph_db_config).graph_db()
         return self
 
+    """
+        需要添加字段：
+            1. operator的name
+            2. action的model_path和model_type
+            3. models列表
+            4. expert的初始workflow改为构建新workflow的prompt
+    """
     @staticmethod
     def load(
         yaml_path: Union[str, Path] = "app/core/sdk/chat2graph.yml",
