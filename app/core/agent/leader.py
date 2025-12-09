@@ -260,7 +260,6 @@ class Leader(Agent):
         running_jobs: Dict[str, Future] = {}
         expert_results: Dict[str, WorkflowMessage] = {}
         job_inputs: Dict[str, AgentMessage] = {}
-        central_orchestrator: CentralOrchestrator = CentralOrchestrator.instance
         with ThreadPoolExecutor() as executor:
             while pending_job_ids or preparing_jobs or waiting_job_ids or running_jobs:
                 ready_job_ids: Set[str] = set()
@@ -270,14 +269,18 @@ class Leader(Agent):
                     assert expert_id is not None, "该任务没有分配Expert"
                     expert = self.state.get_expert_by_id(expert_id)
                     preparing_jobs[job_id] = executor.submit(
-                        self._execute_job, expert, job_inputs[job_id]
+                        self._execute_job, expert, AgentMessage(job_id=job_id)
                     )
                     pending_job_ids.remove(job_id)
                 # step2：将构建好子图的Expert任务放入preparing_jobs中
+                finished_preparing = []
                 for job_id, future in preparing_jobs.items():
                     if future.done():
                         waiting_job_ids.add(job_id)
-                        preparing_jobs.pop(job_id)
+                        finished_preparing.append(job_id)
+
+                for job_id in finished_preparing:
+                    preparing_jobs.pop(job_id, None)
                 # step3：遍历waiting_job_ids，将其按依赖顺序执行（前置节点全部结束即可开始），放入ready_job_ids
                 for job_id in waiting_job_ids:
                     expert_id = self._job_service.get_subjob(job_id).expert_id
