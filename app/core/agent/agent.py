@@ -38,6 +38,7 @@ class Agent(ABC):
         self._profile: Profile = agent_config.profile
         self._workflow: Workflow = agent_config.workflow
         self._reasoner: Reasoner = agent_config.reasoner
+        self._new_workflow: Optional[Workflow] = None
 
         self._message_service: MessageService = MessageService.instance
         self._job_service: JobService = JobService.instance
