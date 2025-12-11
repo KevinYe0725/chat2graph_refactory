@@ -269,7 +269,7 @@ class Leader(Agent):
                     assert expert_id is not None, "该任务没有分配Expert"
                     expert = self.state.get_expert_by_id(expert_id)
                     preparing_jobs[job_id] = executor.submit(
-                        self._execute_job, expert, AgentMessage(job_id=job_id)
+                        self._expert_build_workflow, expert, AgentMessage(job_id=job_id)
                     )
                     pending_job_ids.remove(job_id)
                 # step2：将构建好子图的Expert任务放入preparing_jobs中
@@ -586,6 +586,9 @@ class Leader(Agent):
 
         # color: red
         print(f"\033[38;5;196m[ERROR]: {error_payload}\033[0m")
+
+    def _expert_build_workflow(self, expert: Expert, agent_message: AgentMessage) -> None:
+        expert.execute_new_version(agent_message=agent_message)
 
     def _execute_job(self, expert: Expert, agent_message: AgentMessage) -> AgentMessage:
         #执行expert 返回Expert的结果

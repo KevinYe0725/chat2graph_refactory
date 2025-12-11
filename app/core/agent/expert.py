@@ -59,9 +59,9 @@ class Expert(Agent):
         dynamic_workflow_dict = result
         workflow_parser: WorkflowParser = WorkflowParser()
         answer_dict = workflow_parser.parse_dynamic_workflow(raw=dynamic_workflow_dict)
-        self._workflow = DbgptWorkflow(operator_graph=answer_dict["graph"],evaluator=answer_dict["evaluator"],operator_task_dict=answer_dict["operator_task_dict"])
+        self._new_workflow = DbgptWorkflow(operator_graph=answer_dict["graph"],evaluator=answer_dict["evaluator"],operator_task_dict=answer_dict["operator_task_dict"])
         central_orchestrator = CentralOrchestrator.instance
-        central_orchestrator.register_workflow(workflow=self._workflow,expert_name=self._profile.name)
+        central_orchestrator.register_workflow(workflow=self._new_workflow,expert_name=self._profile.name)
 
 
     def execute(self, agent_message: AgentMessage, retry_count: int = 0) -> AgentMessage:
@@ -87,7 +87,7 @@ class Expert(Agent):
                 f"\033[38;5;208m[Warning]: Job {job.id} already has a final status: "
                 f"{job_result.status.value}.\033[0m"
             )
-            if self._workflow.evaluator:
+            if self._new_workflow.evaluator:
                 return self.save_output_agent_message(
                     job=job,
                     workflow_message=WorkflowMessage(
@@ -116,7 +116,7 @@ class Expert(Agent):
         workflow_messages: List[WorkflowMessage] = agent_message.get_workflow_messages()
         try:
             #将之前的流水线信息放入当前的流水线，进行下一层的执行
-            workflow_message: WorkflowMessage = self._workflow.execute(
+            workflow_message: WorkflowMessage = self._new_workflow.execute(
                 job=job,
                 reasoner=self._reasoner,
                 workflow_messages=workflow_messages,

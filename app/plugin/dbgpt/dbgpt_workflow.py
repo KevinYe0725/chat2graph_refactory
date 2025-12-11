@@ -156,11 +156,11 @@ class DbgptWorkflow(Workflow):
         lesson: Optional[str] = None,
     ) -> WorkflowMessage:
         """Execute the workflow."""
-
+        #创建中央调度中心，获取execution_context
         central_orchestrator = CentralOrchestrator.instance
         ctx = central_orchestrator.get_execution_context(job.assigned_expert_name)
 
-        # 生成新的 workflow version & workflow span
+        # 记录Workflow
         ctx.new_workflow_version()
         ctx.new_workflow_span()
         workflow_record = WorkflowExecutionRecord(
@@ -173,7 +173,6 @@ class DbgptWorkflow(Workflow):
         ctx.current_workflow_record = workflow_record
         ans_msg:WorkflowMessage = run_async_function(self._execute_workflow_new_version, workflow, job, workflow_messages, lesson)
         final_workflow_record = ctx.current_workflow_record
-        final_workflow_record.metadata["status"] = "success"
 
         vmc.log_workflow(final_workflow_record)
         return ans_msg
@@ -252,6 +251,7 @@ class DbgptWorkflow(Workflow):
             lesson=lesson,
         )
         operator_outputs[op_id] = op_output
+        #输出后存入上次输出中
         self._last_operator_outputs = operator_outputs
         return op_output
 

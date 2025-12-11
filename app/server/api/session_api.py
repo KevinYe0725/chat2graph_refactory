@@ -105,6 +105,19 @@ def chat(session_id: str):
         ),
     )
     response_data, message = manager.chat(chat_message)
+    # response_data={
+    #     "data": {
+    #         "payload": "这个是一个测试数据",
+    #         "job_id": "29350e35-3ce5-466c-a8b9-6e2e5580ac73",
+    #         "timestamp": 1764260572740,
+    #         "id": "1647524a-63b1-4df8-912a-f00fdd5a32dc",
+    #         "session_id": session_id,
+    #         "assigned_expert_name": "红看外科",
+    #         "role": "SYSTEM"
+    #     },
+    #     "message": "Chat processed successfully",
+    #     "code": 200
+    # }
     return make_response(data=response_data, message=message)
 
 
